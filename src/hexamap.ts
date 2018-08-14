@@ -15,15 +15,15 @@ namespace Hexamap{
 
             let center = new THREE.Vector3(0, 0, 0);
             geo.vertices.push(...this.getCorners(center));
-            geo.faces.push(...this.getFaces(center, 0));
+            geo.faces.push(...this.getFaces(0));
 
             center = new THREE.Vector3(2*this.size, 5, 2*this.size);
             geo.vertices.push(...this.getCorners(center));
-            geo.faces.push(...this.getFaces(center, 1));
+            geo.faces.push(...this.getFaces(1));
 
             center = new THREE.Vector3(5*this.size, -2, -2*this.size);
             geo.vertices.push(...this.getCorners(center));
-            geo.faces.push(...this.getFaces(center, 2));
+            geo.faces.push(...this.getFaces(2));
 
             geo.computeVertexNormals();
 
@@ -32,7 +32,7 @@ namespace Hexamap{
             return mesh;
         }
 
-        private getFaces(center: THREE.Vector3, index: number): THREE.Face3[]{
+        private getFaces(index: number): THREE.Face3[]{
             let minIndices = index * 6;
             let faces = [
                 new THREE.Face3(0+minIndices, 2+minIndices, 1+minIndices),
