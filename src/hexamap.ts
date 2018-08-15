@@ -13,17 +13,16 @@ namespace Hexamap{
         public generate(): THREE.Mesh {
             let geo = new THREE.Geometry();
 
-            let center = new THREE.Vector3(0, 0, 0);
-            geo.vertices.push(...this.getCorners(center));
-            geo.faces.push(...this.getFaces(0));
-
-            center = new THREE.Vector3(2*this.size, 5, 2*this.size);
-            geo.vertices.push(...this.getCorners(center));
-            geo.faces.push(...this.getFaces(1));
-
-            center = new THREE.Vector3(5*this.size, -2, -2*this.size);
-            geo.vertices.push(...this.getCorners(center));
-            geo.faces.push(...this.getFaces(2));
+            // geo.vertices.push(...this.getCorners(center));
+            // geo.faces.push(...this.getFaces(0));
+            for(let z = 0, i = 0; z < 10; z++){
+                for(let x = 0; x < 10; x++, i++){
+                    let center = new THREE.Vector3((x * this.innerRadius * 2), 0, z * this.outerRadius * 1.5);
+                    center.x = center.x + (center.z * 0.5);
+                    geo.vertices.push(... this.getCorners(center));
+                    geo.faces.push(... this.getFaces(i));
+                }
+            }
 
             geo.computeVertexNormals();
 
