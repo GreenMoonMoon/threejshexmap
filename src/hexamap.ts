@@ -1,5 +1,5 @@
 namespace Hexamap{
-    const cellColor = [
+    const tempCellColor = [
         "#3a8e39",
         "#44270b",
         "#2155f2",
@@ -16,7 +16,7 @@ namespace Hexamap{
     interface Cell {
         coordinates: Coordinate
         vertices: number[], faces: number[]
-        color: THREE.Color
+        tempColor: THREE.Color
     }
 
     export class Grid{
@@ -30,7 +30,7 @@ namespace Hexamap{
                         coordinates: {x: x, y: -x-z, z: z},
                         vertices: [i, i+1, i+2, i+3, i+4, i+5],
                         faces: [f, f+1, f+2, f+3],
-                        color: new THREE.Color(cellColor[Math.floor(Math.random() * cellColor.length)])
+                        tempColor: new THREE.Color(tempCellColor[Math.floor(Math.random() * tempCellColor.length)])
                     });
                 }
             }
@@ -40,11 +40,13 @@ namespace Hexamap{
     export class Generator{
         private outerRadius: number;
         private innerRadius: number;
+        private width: number;
         private size: number;
 
         public constructor(cellSize: number){
             this.outerRadius = cellSize;
             this.innerRadius = cellSize * (Math.sqrt(3)/2)
+            this.width = cellSize * Math.sqrt(3);
             this.size = cellSize;
         }
 
@@ -64,10 +66,10 @@ namespace Hexamap{
                 geo.vertices.push(... this.getCorners(center));
                 geo.faces.push(... this.getFaces(i))
 
-                geo.faces[i * 4].vertexColors = [cell.color, cell.color, cell.color];
-                geo.faces[i * 4 + 1].vertexColors = [cell.color, cell.color, cell.color];
-                geo.faces[i * 4 + 2].vertexColors = [cell.color, cell.color, cell.color];
-                geo.faces[i * 4 + 3].vertexColors = [cell.color, cell.color, cell.color];
+                geo.faces[i * 4].vertexColors = [cell.tempColor, cell.tempColor, cell.tempColor];
+                geo.faces[i * 4 + 1].vertexColors = [cell.tempColor, cell.tempColor, cell.tempColor];
+                geo.faces[i * 4 + 2].vertexColors = [cell.tempColor, cell.tempColor, cell.tempColor];
+                geo.faces[i * 4 + 3].vertexColors = [cell.tempColor, cell.tempColor, cell.tempColor];
             }
 
             geo.computeVertexNormals();
