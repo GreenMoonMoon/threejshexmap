@@ -12,7 +12,11 @@ function setup() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
     scene.background = new THREE.Color(0.9, 0.9, 1.0);
-    camera.position.z = 10;
+    camera.position.x = 80;
+    camera.position.y = 40;
+    camera.position.z = -15;
+    camera.rotateX(-2.5);
+    camera.rotateZ(3.5);
     let ambientLight = new THREE.AmbientLight(0x8888ff, 0.5);
     scene.add(ambientLight);
     let sunLight = new THREE.DirectionalLight(0xfffff0, 1.0);
@@ -21,8 +25,6 @@ function setup() {
     let hexGen = new Hexamap.Generator(10);
     let map = hexGen.generate();
     scene.add(map);
-    let testPoint = new THREE.Points(map.geometry, new THREE.PointsMaterial({ color: 0x000000 }));
-    scene.add(testPoint);
 }
 function update() {
     controls.update();

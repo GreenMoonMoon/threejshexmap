@@ -1,4 +1,12 @@
 namespace Hexamap{
+    const cellColor = [
+        "#3a8e39",
+        "#44270b",
+        "#2155f2",
+        "#bababa",
+        "#e2d8b7"
+    ]
+
     interface Coordinate {
         x: number
         y: number
@@ -8,6 +16,7 @@ namespace Hexamap{
     interface Cell {
         coordinates: Coordinate
         vertices: number[], faces: number[]
+        color: THREE.Color
     }
 
     export class Grid{
@@ -20,7 +29,8 @@ namespace Hexamap{
                     this.cells.push({
                         coordinates: {x: x, y: -x-z, z: z},
                         vertices: [i, i+1, i+2, i+3, i+4, i+5],
-                        faces: [f, f+1, f+2, f+3]
+                        faces: [f, f+1, f+2, f+3],
+                        color: new THREE.Color(cellColor[Math.floor(Math.random() * cellColor.length)])
                     });
                 }
             }
@@ -42,6 +52,7 @@ namespace Hexamap{
 
             let grid = new Grid(10, 10);
             let geo = new THREE.Geometry();
+            let verColor = [];
 
             // geo.vertices.push(...this.getCorners(center));
             // geo.faces.push(...this.getFaces(0));
@@ -50,13 +61,17 @@ namespace Hexamap{
                 let center = new THREE.Vector3(cell.coordinates.x * this.innerRadius * 2, 0, cell.coordinates.z * this.outerRadius * 1.5);
                 center.x += this.innerRadius * (cell.coordinates.z %2);
 
-
                 geo.vertices.push(... this.getCorners(center));
                 geo.faces.push(... this.getFaces(i))
+
+                geo.faces[i * 4].vertexColors = [cell.color, cell.color, cell.color];
+                geo.faces[i * 4 + 1].vertexColors = [cell.color, cell.color, cell.color];
+                geo.faces[i * 4 + 2].vertexColors = [cell.color, cell.color, cell.color];
+                geo.faces[i * 4 + 3].vertexColors = [cell.color, cell.color, cell.color];
             }
 
             geo.computeVertexNormals();
-            let mesh = new THREE.Mesh(geo, new THREE.MeshPhongMaterial({color: 0xFFFFFF}));
+            let mesh = new THREE.Mesh(geo, new THREE.MeshPhongMaterial({vertexColors: THREE.VertexColors}));
 
             return mesh;
         }
