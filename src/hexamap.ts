@@ -1,4 +1,32 @@
 namespace Hexamap{
+    interface Coordinate {
+        x: number
+        y: number
+        z: number
+    }
+
+    interface Cell {
+        coordinates: Coordinate
+        vertices: number[], faces: number[]
+    }
+
+    export class Grid{
+        public cells: Cell[];
+
+        public constructor(width: number, height: number){
+            this.cells = [];
+            for(let z=0, i=0, f=0; z < height; z++){
+                for(let x = 0; x < width; x++, i+=6, f+=4){
+                    this.cells.push({
+                        coordinates: {x: x, y: -x-z, z: z},
+                        vertices: [i, i+1, i+2, i+3, i+4, i+5],
+                        faces: [f, f+1, f+2, f+3]
+                    });
+                }
+            }
+        }
+    }
+
     export class Generator{
         private outerRadius: number;
         private innerRadius: number;
@@ -11,21 +39,23 @@ namespace Hexamap{
         }
 
         public generate(): THREE.Mesh {
+
+            let grid = new Grid(10, 10);
             let geo = new THREE.Geometry();
 
             // geo.vertices.push(...this.getCorners(center));
             // geo.faces.push(...this.getFaces(0));
-            for(let z = 0, i = 0; z < 10; z++){
-                for(let x = 0; x < 10; x++, i++){
-                    let center = new THREE.Vector3((x * this.innerRadius * 2), 0, z * this.outerRadius * 1.5);
-                    center.x = center.x + (center.z * 0.5);
-                    geo.vertices.push(... this.getCorners(center));
-                    geo.faces.push(... this.getFaces(i));
-                }
+            for(let i = 0; i < grid.cells.length; i++){
+                let cell = grid.cells[i];
+                let center = new THREE.Vector3(cell.coordinates.x * this.innerRadius * 2, 0, cell.coordinates.z * this.outerRadius * 1.5);
+                center.x += this.innerRadius * (cell.coordinates.z %2);
+
+
+                geo.vertices.push(... this.getCorners(center));
+                geo.faces.push(... this.getFaces(i))
             }
 
             geo.computeVertexNormals();
-
             let mesh = new THREE.Mesh(geo, new THREE.MeshPhongMaterial({color: 0xFFFFFF}));
 
             return mesh;
@@ -34,10 +64,10 @@ namespace Hexamap{
         private getFaces(index: number): THREE.Face3[]{
             let minIndices = index * 6;
             let faces = [
-                new THREE.Face3(0+minIndices, 2+minIndices, 1+minIndices),
-                new THREE.Face3(2+minIndices, 0+minIndices, 3+minIndices),
-                new THREE.Face3(0+minIndices, 4+minIndices, 3+minIndices),
-                new THREE.Face3(4+minIndices, 0+minIndices, 5+minIndices),
+                new THREE.Face3(0 + minIndices, 2 + minIndices, 1 + minIndices),
+                new THREE.Face3(2 + minIndices, 0 + minIndices, 3 + minIndices),
+                new THREE.Face3(0 + minIndices, 4 + minIndices, 3 + minIndices),
+                new THREE.Face3(4 + minIndices, 0 + minIndices, 5 + minIndices),
             ];
             return faces;
         }

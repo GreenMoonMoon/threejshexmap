@@ -1,14 +1,18 @@
 let renderer: THREE.WebGLRenderer;
 let scene: THREE.Scene;
 let camera: THREE.PerspectiveCamera;
+let raycaster: THREE.Raycaster;
 let controls: THREE.OrbitControls;
 
 function setup(){
     renderer = new THREE.WebGLRenderer();
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    raycaster = new THREE.Raycaster();
     controls = new THREE.OrbitControls(camera);
+
     renderer.setSize(window.innerWidth, window.innerHeight);
+    
     document.body.appendChild(renderer.domElement);
     
     scene.background = new THREE.Color(0.9, 0.9, 1.0);
