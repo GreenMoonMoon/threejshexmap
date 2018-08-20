@@ -33,16 +33,14 @@ var Hexamap;
         new THREE.Vector3(-1, 0),
     ];
     class Generator {
-        constructor(cellSize) {
+        constructor(cellSize, padding) {
+            this.size = cellSize - cellSize * padding;
             this.outerRadius = cellSize;
             this.innerRadius = cellSize * (Math.sqrt(3) / 2);
-            this.width = cellSize * Math.sqrt(3);
-            this.size = cellSize;
         }
         generate() {
             let grid = this.createGrid(10, 10);
             let geo = new THREE.Geometry();
-            let verColor = [];
             for (let i = 0; i < grid.cells.length; i++) {
                 let cell = grid.cells[i];
                 let center = new THREE.Vector3(cell.coordinates.x * this.innerRadius * 2, 0, cell.coordinates.z * this.outerRadius * 1.5);
@@ -56,6 +54,11 @@ var Hexamap;
             }
             geo.computeVertexNormals();
             let mesh = new THREE.Mesh(geo, new THREE.MeshPhongMaterial({ vertexColors: THREE.VertexColors, shininess: 60 }));
+            for (let cell of grid.cells) {
+                for (let direction = 0; direction < 6; direction++) {
+                    let n = this.GetNeighbors(cell, direction);
+                }
+            }
             return mesh;
         }
         createGrid(width, height) {
@@ -91,8 +94,20 @@ var Hexamap;
             }
             return corners;
         }
+        GetDirectionCorner(cell, direction) {
+            return [cell.vertices[direction], cell.vertices[(direction + 1) % 6]];
+        }
+        GetNeighbors(cell, direction) {
+            let neighborsCoordinate = cell.coordinates.add(GetAxialDirectionFromCell(cell, direction));
+            console.log(neighborsCoordinate);
+            return null;
+        }
     }
     Hexamap.Generator = Generator;
+    function GetInvertDirection(direction) {
+        return (direction + 3) % 6;
+    }
+    Hexamap.GetInvertDirection = GetInvertDirection;
     function CubeToAxial(coordinate) {
         return new THREE.Vector2(coordinate.x, coordinate.z);
     }

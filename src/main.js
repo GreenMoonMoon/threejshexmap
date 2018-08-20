@@ -22,7 +22,7 @@ function setup() {
     let sunLight = new THREE.DirectionalLight(0xfffff0, 1.0);
     sunLight.position.set(1, 1, 1);
     scene.add(sunLight);
-    let hexGen = new Hexamap.Generator(10);
+    let hexGen = new Hexamap.Generator(10, 0.25);
     let map = hexGen.generate();
     scene.add(map);
 }
