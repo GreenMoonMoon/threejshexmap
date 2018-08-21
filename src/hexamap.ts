@@ -35,80 +35,106 @@ namespace Hexamap {
     ]
 
     interface Cell {
-        coordinates: THREE.Vector3
-        vertices: number[],
-        faces: number[]
-        tempColor: THREE.Color
+        coordinates: THREE.Vector3;
+        vertices: number[];
+        faces: number[];
     }
 
-    export interface Grid {
+    export class Map {
+        mesh: THREE.Mesh;
         cells: Cell[];
     }
 
+    export interface GeneratorParameters {
+        size: number;
+        padding: number;
+        width: number;
+        height: number;
+    }
+
+    /**
+     * This class is used to generate maps. I do not use the constructor in the class map, has I want to
+     * move all unnecessary data and function out of the class. This class jobs is to crunches numbers and set
+     * all map data.
+     */
     export class Generator {
         private outerRadius: number;
         private innerRadius: number;
-        // private width: number;
+        private width: number;
+        private height: number;
         private size: number;
-        // private padding: number;
 
-        public constructor(cellSize: number, padding: number) {
-            this.size = cellSize - cellSize * padding;
-            this.outerRadius = cellSize;
-            this.innerRadius = cellSize * (Math.sqrt(3) / 2)
-            // this.width = cellSize * Math.sqrt(3);
-            // this.padding = padding * cellSize;
+        public constructor(parameters: GeneratorParameters) {
+            this.size = parameters.size - parameters.size * parameters.padding;
+            this.width = parameters.width;
+            this.height = parameters.height;
+            this.outerRadius = parameters.size;
+            this.innerRadius = parameters.size * (Math.sqrt(3) / 2)
         }
 
-        public generate(): THREE.Mesh {
+        public generate(): Map {
 
-            let grid = this.createGrid(10, 10);
+            let map = this.CreateMap(this.width, this.height);
 
+            map.mesh.geometry = this.CreateGeometry(map.cells);
+            map.mesh.material = this.CreateMaterial();
+
+            return map;
+        }
+
+        private CreateMaterial(): THREE.MeshBasicMaterial {
+            return new THREE.MeshPhongMaterial({ vertexColors: THREE.VertexColors, shininess: 60 });
+        }
+
+        private CreateGeometry(cells: Cell[]): THREE.Geometry {
             let geo = new THREE.Geometry();
+            for(let index=0; index < cells.length; index++){
+                // Create physical center for each cell.
+                let center =  new THREE.Vector3(cells[index].coordinates.x * this.innerRadius * 2, 2 * index, cells[index].coordinates.z * this.outerRadius * 1.5);
+                center.x += this.innerRadius * (cells[index].coordinates.z % 2);
 
-            for (let i = 0; i < grid.cells.length; i++) {
-                let cell = grid.cells[i];
-                let center = new THREE.Vector3(cell.coordinates.x * this.innerRadius * 2, 0, cell.coordinates.z * this.outerRadius * 1.5);
-                center.x += this.innerRadius * (cell.coordinates.z % 2);
+                geo.vertices.push(... this.GetCorners(center));
+                geo.faces.push(... this.GetFaces(index))
 
-                geo.vertices.push(... this.getCorners(center));
-                geo.faces.push(... this.getFaces(i))
-
-                geo.faces[i * 4].vertexColors = [cell.tempColor, cell.tempColor, cell.tempColor];
-                geo.faces[i * 4 + 1].vertexColors = [cell.tempColor, cell.tempColor, cell.tempColor];
-                geo.faces[i * 4 + 2].vertexColors = [cell.tempColor, cell.tempColor, cell.tempColor];
-                geo.faces[i * 4 + 3].vertexColors = [cell.tempColor, cell.tempColor, cell.tempColor];
+                for(let n =0; n < 3; n++){
+                    let neighbor = this.GetNeighbors(cells[index], n);
+                    if(neighbor != null){
+                        geo.faces.push(... this.GetEdgeFaces(cells[index], neighbor))
+                    }
+                }
             }
 
             geo.computeVertexNormals();
-            let mesh = new THREE.Mesh(geo, new THREE.MeshPhongMaterial({ vertexColors: THREE.VertexColors, shininess: 60 }));
 
-            for(let cell of grid.cells){
-                for(let direction = 0; direction < 6; direction++){
-                    let n = this.GetNeighbors(cell, direction);
-                }
-            }
-
-            return mesh;
+            return geo;
         }
 
-        private createGrid(width: number, height: number): Grid {
+        private GetEdgeFaces(a: Cell, b: Cell): THREE.Face3[] {
+            return null;
+        }
+        
+        private CreateGeometryBuffer(cells: Cell[]): THREE.BufferGeometry {
+            return null;
+        }
 
-            let grid = { cells: new Array<Cell>() };
+        private CreateMap(width: number, height: number): Map {
+
+            let map = { cells: new Array<Cell>(), mesh: new THREE.Mesh() };
             for (let z = 0, i = 0, f = 0; z < height; z++) {
                 for (let x = 0; x < width; x++ , i += 6, f += 4) {
-                    grid.cells.push({
+                    let cell ={
                         coordinates: new THREE.Vector3(x, -x - z, z),
                         vertices: [i, i + 1, i + 2, i + 3, i + 4, i + 5],
                         faces: [f, f + 1, f + 2, f + 3],
-                        tempColor: new THREE.Color(tempCellColor[Math.floor(Math.random() * tempCellColor.length)])
-                    });
+                    };
+                    map.cells.push(cell);
                 }
             }
-            return grid;
+            
+            return map;
         }
 
-        private getFaces(index: number): THREE.Face3[] {
+        private GetFaces(index: number): THREE.Face3[] {
             let minIndices = index * 6;
             let faces = [
                 new THREE.Face3(0 + minIndices, 2 + minIndices, 1 + minIndices),
@@ -119,7 +145,7 @@ namespace Hexamap {
             return faces;
         }
 
-        private getCorners(center: THREE.Vector3): THREE.Vector3[] {
+        private GetCorners(center: THREE.Vector3): THREE.Vector3[] {
             let corners = <THREE.Vector3[]>[];
 
             for (let i = 0; i < 6; i++) {
@@ -149,7 +175,7 @@ namespace Hexamap {
             return null;
         }
     }
-    
+
     export function GetInvertDirection(direction: Direction): number {
         return (direction + 3) % 6;
     }

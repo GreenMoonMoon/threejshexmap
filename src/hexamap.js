@@ -32,40 +32,42 @@ var Hexamap;
         new THREE.Vector3(-1, 1),
         new THREE.Vector3(-1, 0),
     ];
+    class Map {
+    }
+    Hexamap.Map = Map;
     class Generator {
-        constructor(cellSize, padding) {
-            this.size = cellSize - cellSize * padding;
-            this.outerRadius = cellSize;
-            this.innerRadius = cellSize * (Math.sqrt(3) / 2);
+        constructor(parameters) {
+            this.size = parameters.size - parameters.size * parameters.padding;
+            this.width = parameters.width;
+            this.height = parameters.height;
+            this.outerRadius = parameters.size;
+            this.innerRadius = parameters.size * (Math.sqrt(3) / 2);
         }
         generate() {
-            let grid = this.createGrid(10, 10);
+            let map = this.createGrid(this.width, this.height);
+            map.mesh.geometry = this.createGeometry(map.cells);
+            map.mesh.material = new THREE.MeshPhongMaterial({ vertexColors: THREE.VertexColors, shininess: 60 });
+            return map;
+        }
+        createGeometry(cells) {
             let geo = new THREE.Geometry();
-            for (let i = 0; i < grid.cells.length; i++) {
-                let cell = grid.cells[i];
-                let center = new THREE.Vector3(cell.coordinates.x * this.innerRadius * 2, 0, cell.coordinates.z * this.outerRadius * 1.5);
-                center.x += this.innerRadius * (cell.coordinates.z % 2);
+            for (let index = 0; index < cells.length; index++) {
+                let center = new THREE.Vector3(cells[index].coordinates.x * this.innerRadius * 2, 2 * index, cells[index].coordinates.z * this.outerRadius * 1.5);
+                center.x += this.innerRadius * (cells[index].coordinates.z % 2);
                 geo.vertices.push(...this.getCorners(center));
-                geo.faces.push(...this.getFaces(i));
-                geo.faces[i * 4].vertexColors = [cell.tempColor, cell.tempColor, cell.tempColor];
-                geo.faces[i * 4 + 1].vertexColors = [cell.tempColor, cell.tempColor, cell.tempColor];
-                geo.faces[i * 4 + 2].vertexColors = [cell.tempColor, cell.tempColor, cell.tempColor];
-                geo.faces[i * 4 + 3].vertexColors = [cell.tempColor, cell.tempColor, cell.tempColor];
+                geo.faces.push(...this.getFaces(index));
             }
             geo.computeVertexNormals();
-            let mesh = new THREE.Mesh(geo, new THREE.MeshPhongMaterial({ vertexColors: THREE.VertexColors, shininess: 60 }));
-            for (let cell of grid.cells) {
-                for (let direction = 0; direction < 6; direction++) {
-                    let n = this.GetNeighbors(cell, direction);
-                }
-            }
-            return mesh;
+            return geo;
+        }
+        createGeometryBuffer(cells) {
+            return null;
         }
         createGrid(width, height) {
-            let grid = { cells: new Array() };
+            let map = { cells: new Array(), mesh: new THREE.Mesh() };
             for (let z = 0, i = 0, f = 0; z < height; z++) {
                 for (let x = 0; x < width; x++, i += 6, f += 4) {
-                    grid.cells.push({
+                    map.cells.push({
                         coordinates: new THREE.Vector3(x, -x - z, z),
                         vertices: [i, i + 1, i + 2, i + 3, i + 4, i + 5],
                         faces: [f, f + 1, f + 2, f + 3],
@@ -73,7 +75,7 @@ var Hexamap;
                     });
                 }
             }
-            return grid;
+            return map;
         }
         getFaces(index) {
             let minIndices = index * 6;
