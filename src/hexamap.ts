@@ -34,6 +34,13 @@ namespace Hexamap {
         new THREE.Vector3(-1, 0),
     ]
 
+    export interface GeneratorParameters {
+        size: number;
+        padding: number;
+        width: number;
+        height: number;
+    }
+
     interface Cell {
         coordinates: THREE.Vector3;
         vertices: number[];
@@ -43,13 +50,24 @@ namespace Hexamap {
     export class Map {
         mesh: THREE.Mesh;
         cells: Cell[];
-    }
+        private rowLength: number;
 
-    export interface GeneratorParameters {
-        size: number;
-        padding: number;
-        width: number;
-        height: number;
+        public constructor(width: number) {
+            this.cells = new Array<Cell>();
+            this.mesh = new THREE.Mesh();
+        }
+
+        public GetCellAt(coordinate: THREE.Vector2): Cell {
+            let h = this.Hash(coordinate);
+            if (h > 0 && h < this.cells.length) {
+                return this.cells[h];
+            }
+            return null;
+        }
+
+        private Hash(coordinate: THREE.Vector2): number {
+            return (coordinate.x * this.rowLength) + coordinate.y;
+        }
     }
 
     /**
@@ -74,55 +92,20 @@ namespace Hexamap {
 
         public generate(): Map {
 
-            let map = this.CreateMap(this.width, this.height);
+            let map = this.GenerateMap(this.width, this.height);
 
-            map.mesh.geometry = this.CreateGeometry(map.cells);
-            map.mesh.material = this.CreateMaterial();
+            map.mesh.geometry = this.GenerateGeometry(map.cells);
+            map.mesh.material = this.GenerateMaterial();
 
             return map;
         }
 
-        private CreateMaterial(): THREE.MeshBasicMaterial {
-            return new THREE.MeshPhongMaterial({ vertexColors: THREE.VertexColors, shininess: 60 });
-        }
+        private GenerateMap(width: number, height: number): Map {
 
-        private CreateGeometry(cells: Cell[]): THREE.Geometry {
-            let geo = new THREE.Geometry();
-            for(let index=0; index < cells.length; index++){
-                // Create physical center for each cell.
-                let center =  new THREE.Vector3(cells[index].coordinates.x * this.innerRadius * 2, 2 * index, cells[index].coordinates.z * this.outerRadius * 1.5);
-                center.x += this.innerRadius * (cells[index].coordinates.z % 2);
-
-                geo.vertices.push(... this.GetCorners(center));
-                geo.faces.push(... this.GetFaces(index))
-
-                for(let n =0; n < 3; n++){
-                    let neighbor = this.GetNeighbors(cells[index], n);
-                    if(neighbor != null){
-                        geo.faces.push(... this.GetEdgeFaces(cells[index], neighbor))
-                    }
-                }
-            }
-
-            geo.computeVertexNormals();
-
-            return geo;
-        }
-
-        private GetEdgeFaces(a: Cell, b: Cell): THREE.Face3[] {
-            return null;
-        }
-        
-        private CreateGeometryBuffer(cells: Cell[]): THREE.BufferGeometry {
-            return null;
-        }
-
-        private CreateMap(width: number, height: number): Map {
-
-            let map = { cells: new Array<Cell>(), mesh: new THREE.Mesh() };
+            let map = new Map(width);
             for (let z = 0, i = 0, f = 0; z < height; z++) {
                 for (let x = 0; x < width; x++ , i += 6, f += 4) {
-                    let cell ={
+                    let cell = {
                         coordinates: new THREE.Vector3(x, -x - z, z),
                         vertices: [i, i + 1, i + 2, i + 3, i + 4, i + 5],
                         faces: [f, f + 1, f + 2, f + 3],
@@ -130,8 +113,38 @@ namespace Hexamap {
                     map.cells.push(cell);
                 }
             }
-            
+
             return map;
+        }
+
+        private GenerateGeometry(cells: Cell[]): THREE.Geometry {
+            let geo = new THREE.Geometry();
+            for (let index = 0; index < cells.length; index++) {
+                // Create physical center for each cell.
+                let center = new THREE.Vector3(cells[index].coordinates.x * this.innerRadius * 2, 2 * index, cells[index].coordinates.z * this.outerRadius * 1.5);
+                center.x += this.innerRadius * (cells[index].coordinates.z % 2);
+
+                geo.vertices.push(... this.GetCorners(center));
+                geo.faces.push(... this.GetFaces(index))
+            }
+
+            for (let index = 2; index < cells.length; index++) {
+                let vertices = this.GetDirectionCorner(cells[index - 1], 0);
+                vertices.push(... this.GetDirectionCorner(cells[index], 3));
+
+                geo.faces.push(...[
+                    new THREE.Face3(vertices[0], vertices[1], vertices[2]),
+                    new THREE.Face3(vertices[2], vertices[3], vertices[0])
+                ])
+            }
+
+            geo.computeVertexNormals();
+
+            return geo;
+        }
+
+        private GenerateMaterial(): THREE.MeshBasicMaterial {
+            return new THREE.MeshPhongMaterial({ vertexColors: THREE.VertexColors, shininess: 60 });
         }
 
         private GetFaces(index: number): THREE.Face3[] {
